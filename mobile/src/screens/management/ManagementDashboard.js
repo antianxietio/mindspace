@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const ManagementDashboard = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { sessions } = useSelector((state) => state.sessions);
+  const { sessions = [] } = useSelector((state) => state.sessions || {});
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(async () => {

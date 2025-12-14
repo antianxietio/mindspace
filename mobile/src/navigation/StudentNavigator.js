@@ -19,23 +19,23 @@ const Stack = createStackNavigator();
 
 const HomeStack = () => (
   <Stack.Navigator>
-    <Stack.Screen 
-      name="Dashboard" 
+    <Stack.Screen
+      name="Dashboard"
       component={StudentDashboard}
       options={{ headerShown: false }}
     />
-    <Stack.Screen 
-      name="CounsellorList" 
+    <Stack.Screen
+      name="CounsellorList"
       component={CounsellorListScreen}
       options={{ title: 'Counsellors' }}
     />
-    <Stack.Screen 
-      name="BookAppointment" 
+    <Stack.Screen
+      name="BookAppointment"
       component={BookAppointmentScreen}
       options={{ title: 'Book Appointment' }}
     />
-    <Stack.Screen 
-      name="QRCode" 
+    <Stack.Screen
+      name="QRCode"
       component={QRCodeScreen}
       options={{ title: 'My QR Code' }}
     />
@@ -44,13 +44,13 @@ const HomeStack = () => (
 
 const JournalStack = () => (
   <Stack.Navigator>
-    <Stack.Screen 
-      name="JournalList" 
+    <Stack.Screen
+      name="JournalList"
       component={JournalListScreen}
       options={{ title: 'My Journals' }}
     />
-    <Stack.Screen 
-      name="JournalEditor" 
+    <Stack.Screen
+      name="JournalEditor"
       component={JournalEditorScreen}
       options={{ title: 'Write Journal' }}
     />

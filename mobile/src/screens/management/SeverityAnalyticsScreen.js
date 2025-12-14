@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const SeverityAnalyticsScreen = () => {
   const dispatch = useDispatch();
-  const { sessions } = useSelector((state) => state.sessions);
+  const { sessions = [] } = useSelector((state) => state.sessions || {});
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
@@ -133,8 +133,8 @@ const SeverityAnalyticsScreen = () => {
                   {highPercentage > 30
                     ? '⚠️ High severity cases exceed 30%. Consider increasing counselor availability and resources.'
                     : highPercentage > 20
-                    ? '⚡ Moderate to high severity cases detected. Ensure regular follow-ups.'
-                    : '✅ Severity distribution is healthy. Continue current support practices.'}
+                      ? '⚡ Moderate to high severity cases detected. Ensure regular follow-ups.'
+                      : '✅ Severity distribution is healthy. Continue current support practices.'}
                 </Text>
               </Card.Content>
             </Card>

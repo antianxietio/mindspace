@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const SessionHistoryScreen = () => {
   const dispatch = useDispatch();
-  const { sessions, isLoading } = useSelector((state) => state.sessions);
+  const { sessions = [], isLoading } = useSelector((state) => state.sessions || {});
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {

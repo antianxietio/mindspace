@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const StudentHistoryScreen = () => {
   const dispatch = useDispatch();
-  const { sessions } = useSelector((state) => state.sessions);
+  const { sessions = [] } = useSelector((state) => state.sessions || {});
   const [searchQuery, setSearchQuery] = React.useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -22,8 +22,9 @@ const StudentHistoryScreen = () => {
     }).start();
   }, [dispatch]);
 
-  const filteredSessions = (sessions || []).filter((s) =>
-    s.student?.anonymousUsername?.toLowerCase().includes(searchQuery.toLowerCase())
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const filteredSessions = safeSessions.filter((s) =>
+    s?.student?.anonymousUsername?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getSeverityColor = (severity) => {
@@ -39,46 +40,50 @@ const StudentHistoryScreen = () => {
     }
   };
 
-  const renderSession = ({ item }) => (
-    <Card style={styles.card}>
-      <Card.Content>
-        <View style={styles.header}>
-          <View style={styles.studentInfo}>
-            <Icon name="shield-account" size={24} color={theme.colors.primary} />
-            <Text style={styles.anonymousId}>{item.student?.anonymousUsername}</Text>
+  const renderSession = ({ item }) => {
+    if (!item) return null;
+
+    return (
+      <Card style={styles.card}>
+        <Card.Content>
+          <View style={styles.header}>
+            <View style={styles.studentInfo}>
+              <Icon name="shield-account" size={24} color={theme.colors.primary} />
+              <Text style={styles.anonymousId}>{item.student?.anonymousUsername || 'Unknown'}</Text>
+            </View>
+            {item.severity && (
+              <Chip
+                mode="flat"
+                style={{ backgroundColor: getSeverityColor(item.severity) + '20' }}
+                textStyle={{ color: getSeverityColor(item.severity) }}
+              >
+                {item.severity}
+              </Chip>
+            )}
           </View>
-          {item.severity && (
-            <Chip
-              mode="flat"
-              style={{ backgroundColor: getSeverityColor(item.severity) + '20' }}
-              textStyle={{ color: getSeverityColor(item.severity) }}
-            >
-              {item.severity}
-            </Chip>
+
+          <View style={styles.detailsRow}>
+            <Icon name="calendar" size={16} color={theme.colors.placeholder} />
+            <Text style={styles.detailText}>{new Date(item.date).toLocaleDateString()}</Text>
+          </View>
+
+          <View style={styles.detailsRow}>
+            <Icon name="clock-outline" size={16} color={theme.colors.placeholder} />
+            <Text style={styles.detailText}>{item.duration || '45 min'}</Text>
+          </View>
+
+          {item.notes && (
+            <View style={styles.notesContainer}>
+              <Text style={styles.notesLabel}>Notes:</Text>
+              <Text style={styles.notesText} numberOfLines={3}>
+                {item.notes}
+              </Text>
+            </View>
           )}
-        </View>
-
-        <View style={styles.detailsRow}>
-          <Icon name="calendar" size={16} color={theme.colors.placeholder} />
-          <Text style={styles.detailText}>{new Date(item.date).toLocaleDateString()}</Text>
-        </View>
-
-        <View style={styles.detailsRow}>
-          <Icon name="clock-outline" size={16} color={theme.colors.placeholder} />
-          <Text style={styles.detailText}>{item.duration || '45 min'}</Text>
-        </View>
-
-        {item.notes && (
-          <View style={styles.notesContainer}>
-            <Text style={styles.notesLabel}>Notes:</Text>
-            <Text style={styles.notesText} numberOfLines={3}>
-              {item.notes}
-            </Text>
-          </View>
-        )}
-      </Card.Content>
-    </Card>
-  );
+        </Card.Content>
+      </Card>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>

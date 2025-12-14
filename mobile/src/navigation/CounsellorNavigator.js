@@ -16,23 +16,23 @@ const Stack = createStackNavigator();
 
 const HomeStack = () => (
   <Stack.Navigator>
-    <Stack.Screen 
-      name="Dashboard" 
+    <Stack.Screen
+      name="Dashboard"
       component={CounsellorDashboard}
-      options={{ title: 'Counsellor Dashboard' }}
+      options={{ headerShown: false }}
     />
-    <Stack.Screen 
-      name="QRScanner" 
+    <Stack.Screen
+      name="QRScanner"
       component={QRScannerScreen}
       options={{ title: 'Scan QR Code' }}
     />
-    <Stack.Screen 
-      name="SessionDetails" 
+    <Stack.Screen
+      name="SessionDetails"
       component={SessionDetailsScreen}
       options={{ title: 'Session Details' }}
     />
-    <Stack.Screen 
-      name="StudentHistory" 
+    <Stack.Screen
+      name="StudentHistory"
       component={StudentHistoryScreen}
       options={{ title: 'Student History' }}
     />

@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const CounsellorAppointmentsScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { appointments, isLoading } = useSelector((state) => state.appointments);
+  const { appointments = [], isLoading } = useSelector((state) => state.appointments || {});
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {

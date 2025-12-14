@@ -10,12 +10,12 @@ import { spacing, theme } from '../../constants/theme';
 const BookAppointmentScreen = ({ route, navigation }) => {
   const { counsellor } = route.params;
   const dispatch = useDispatch();
-  const { timeSlots, isLoading } = useSelector((state) => state.appointments);
+  const { timeSlots = [], isLoading } = useSelector((state) => state.appointments || {});
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [reason, setReason] = useState('');
-  const [appointmentType, setAppointmentType] = useState('individual');
+  const appointmentType = 'individual';
 
   useEffect(() => {
     if (counsellor) {
@@ -59,26 +59,6 @@ const BookAppointmentScreen = ({ route, navigation }) => {
             <Text style={styles.specialization}>{counsellor?.specialization}</Text>
           </Card.Content>
         </Card>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appointment Type</Text>
-          <View style={styles.typeContainer}>
-            <Chip
-              selected={appointmentType === 'individual'}
-              onPress={() => setAppointmentType('individual')}
-              style={styles.typeChip}
-            >
-              Individual
-            </Chip>
-            <Chip
-              selected={appointmentType === 'group'}
-              onPress={() => setAppointmentType('group')}
-              style={styles.typeChip}
-            >
-              Group
-            </Chip>
-          </View>
-        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Date</Text>

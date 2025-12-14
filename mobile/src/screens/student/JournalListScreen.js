@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const JournalListScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { journals } = useSelector((state) => state.journals);
+  const { journals = [] } = useSelector((state) => state.journals || {});
   const [searchQuery, setSearchQuery] = React.useState('');
 
   useEffect(() => {

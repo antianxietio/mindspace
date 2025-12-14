@@ -23,6 +23,11 @@ const JournalEditorScreen = ({ route, navigation }) => {
   const [paths, setPaths] = useState([]);
   const [currentPath, setCurrentPath] = useState('');
   const [currentColor, setCurrentColor] = useState(theme.colors.primary);
+  const [canvasHeight, setCanvasHeight] = useState(320);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const currentPathRef = useRef('');
+  const currentColorRef = useRef(currentColor);
+  const resizeStartHeight = useRef(canvasHeight);
 
   const moods = ['happy', 'calm', 'anxious', 'sad', 'neutral'];
   const commonTags = ['academic', 'social', 'achievement', 'stress', 'personal'];
@@ -69,35 +74,70 @@ const JournalEditorScreen = ({ route, navigation }) => {
     }
   };
 
+  useEffect(() => {
+    currentColorRef.current = currentColor;
+  }, [currentColor]);
+
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => mode === 'draw',
-      onMoveShouldSetPanResponder: () => mode === 'draw',
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
+        setScrollEnabled(false);
         const { locationX, locationY } = evt.nativeEvent;
-        setCurrentPath(`M${locationX},${locationY}`);
+        const startPath = `M${locationX},${locationY}`;
+        currentPathRef.current = startPath;
+        setCurrentPath(startPath);
       },
       onPanResponderMove: (evt) => {
         const { locationX, locationY } = evt.nativeEvent;
-        setCurrentPath((prevPath) => `${prevPath} L${locationX},${locationY}`);
+        currentPathRef.current = `${currentPathRef.current} L${locationX},${locationY}`;
+        setCurrentPath(currentPathRef.current);
       },
       onPanResponderRelease: () => {
-        if (currentPath) {
-          setPaths([...paths, { path: currentPath, color: currentColor }]);
+        setScrollEnabled(true);
+        if (currentPathRef.current) {
+          setPaths((prev) => [...prev, { path: currentPathRef.current, color: currentColorRef.current }]);
+          currentPathRef.current = '';
           setCurrentPath('');
         }
       },
+      onPanResponderTerminationRequest: () => false,
     })
   ).current;
 
   const clearDrawing = () => {
     setPaths([]);
     setCurrentPath('');
+    currentPathRef.current = '';
   };
+
+  const resizeResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onPanResponderGrant: () => {
+        resizeStartHeight.current = canvasHeight;
+        setScrollEnabled(false);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const next = Math.min(520, Math.max(220, resizeStartHeight.current + gestureState.dy));
+        setCanvasHeight(next);
+      },
+      onPanResponderRelease: () => {
+        setScrollEnabled(true);
+      },
+      onPanResponderTerminationRequest: () => false,
+    })
+  ).current;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        scrollEnabled={scrollEnabled}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.content}>
           <TextInput
             label="Title"
@@ -134,9 +174,11 @@ const JournalEditorScreen = ({ route, navigation }) => {
               onChangeText={setContent}
               mode="outlined"
               multiline
-              numberOfLines={15}
+              scrollEnabled
+              numberOfLines={12}
               style={[styles.input, styles.contentInput]}
               placeholder="Write your thoughts here..."
+              textAlignVertical="top"
             />
           ) : (
             <View style={styles.drawingContainer}>
@@ -165,39 +207,47 @@ const JournalEditorScreen = ({ route, navigation }) => {
                   Clear
                 </Button>
               </View>
-              <View
-                style={styles.canvas}
-                {...panResponder.panHandlers}
-              >
-                <Svg height="300" width={width - 48}>
-                  {paths.map((item, index) => (
-                    <Path
-                      key={index}
-                      d={item.path}
-                      stroke={item.color}
-                      strokeWidth={3}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  ))}
-                  {currentPath && (
-                    <Path
-                      d={currentPath}
-                      stroke={currentColor}
-                      strokeWidth={3}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  )}
-                </Svg>
+              <View style={[styles.canvas, { height: canvasHeight }]}>
+                <View
+                  style={{ width: '100%', height: '100%' }}
+                  {...panResponder.panHandlers}
+                >
+                  <Svg height={canvasHeight} width={width - 48}>
+                    {paths.map((item, index) => (
+                      <Path
+                        key={index}
+                        d={item.path}
+                        stroke={item.color}
+                        strokeWidth={3}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ))}
+                    {currentPath && (
+                      <Path
+                        d={currentPath}
+                        stroke={currentColor}
+                        strokeWidth={3}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+                  </Svg>
+                </View>
                 {paths.length === 0 && !currentPath && (
                   <View style={styles.canvasPlaceholder}>
                     <Icon name="gesture" size={48} color={theme.colors.placeholder} />
                     <Text style={styles.canvasPlaceholderText}>Draw with your finger</Text>
                   </View>
                 )}
+                <View
+                  style={styles.resizeHandle}
+                  {...resizeResponder.panHandlers}
+                >
+                  <Icon name="resize-bottom-right" size={20} color={theme.colors.placeholder} />
+                </View>
               </View>
             </View>
           )}
@@ -328,6 +378,17 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary + '30',
     borderStyle: 'dashed',
     overflow: 'hidden',
+  },
+  resizeHandle: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFFCC',
   },
   canvasPlaceholder: {
     position: 'absolute',

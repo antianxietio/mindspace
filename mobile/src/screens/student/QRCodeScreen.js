@@ -1,14 +1,35 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from 'react-native-paper';
-import QRCode from 'react-native-qrcode-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSelector } from 'react-redux';
 import { spacing, theme } from '../../constants/theme';
 
 const QRCodeScreen = () => {
   const { user } = useSelector((state) => state.auth);
+  const [imageLoading, setImageLoading] = React.useState(true);
+
+  // Debug: Log user data
+  React.useEffect(() => {
+    console.log('QR Screen - User data:', {
+      hasUser: !!user,
+      anonymousUsername: user?.anonymousUsername,
+      _id: user?._id,
+      qrSecret: user?.qrSecret,
+    });
+  }, [user]);
+
+  const qrData = useMemo(() => {
+    // Use simpler data - just the anonymous username
+    if (!user?.anonymousUsername) return null;
+    return user.anonymousUsername;
+  }, [user]);
+
+  const qrImageUrl = useMemo(() => {
+    if (!qrData) return null;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`;
+  }, [qrData]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -20,22 +41,30 @@ const QRCodeScreen = () => {
 
         <View style={styles.qrContainer}>
           {user?.anonymousUsername ? (
-            <QRCode
-              value={JSON.stringify({
-                studentId: user._id || 'MOCK-ID',
-                username: user.anonymousUsername,
-                secret: user.qrSecret || 'MOCK-SECRET',
-                timestamp: Date.now(),
-              })}
-              size={250}
-              color="#000000"
-              backgroundColor="#FFFFFF"
-              logoSize={50}
-              logoBackgroundColor="#FFFFFF"
-              logoBorderRadius={10}
-            />
+            <View style={styles.qrImageWrapper}>
+              {imageLoading && (
+                <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+              )}
+              <Image
+                source={{ uri: qrImageUrl }}
+                style={styles.qrImage}
+                onLoadStart={() => setImageLoading(true)}
+                onLoadEnd={() => setImageLoading(false)}
+                onError={(e) => {
+                  console.log('QR Image load error:', e.nativeEvent.error);
+                  setImageLoading(false);
+                }}
+              />
+            </View>
           ) : (
-            <Text style={styles.loadingText}>Generating QR Code...</Text>
+            <View style={styles.loadingBox}>
+              <Icon name="qrcode" size={80} color={theme.colors.placeholder} />
+              <Text style={styles.loadingText}>Waiting for user data...</Text>
+              <Text style={styles.helperText}>
+                User: {user ? 'Yes' : 'No'} | Username: {user?.anonymousUsername || 'Missing'}
+              </Text>
+              <Text style={styles.helperText}>Please re-login if this persists.</Text>
+            </View>
           )}
         </View>
 
@@ -95,6 +124,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
+  qrImageWrapper: {
+    width: 250,
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qrImage: {
+    width: 250,
+    height: 250,
+  },
+  loader: {
+    position: 'absolute',
+  },
   infoContainer: {
     marginTop: spacing.xl,
     alignItems: 'center',
@@ -139,6 +181,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginVertical: spacing.xs,
     color: theme.colors.text,
+  },
+  loadingBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 250,
+    padding: spacing.lg,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: theme.colors.placeholder,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  helperText: {
+    fontSize: 12,
+    color: theme.colors.error,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  debugText: {
+    fontSize: 10,
+    color: theme.colors.placeholder,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
 });
 

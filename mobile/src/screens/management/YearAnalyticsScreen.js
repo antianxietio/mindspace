@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const YearAnalyticsScreen = () => {
   const dispatch = useDispatch();
-  const { sessions } = useSelector((state) => state.sessions);
+  const { sessions = [] } = useSelector((state) => state.sessions || {});
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

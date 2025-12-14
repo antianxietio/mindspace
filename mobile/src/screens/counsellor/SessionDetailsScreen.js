@@ -1,24 +1,44 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Animated, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput, Button, Chip, Card } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { spacing, theme } from '../../constants/theme';
+import { sessionService } from '../../services/sessionService';
 
 const SessionDetailsScreen = ({ route, navigation }) => {
   const { sessionId } = route.params || {};
+  const [sessionData, setSessionData] = useState(null);
   const [notes, setNotes] = useState('');
-  const [severity, setSeverity] = useState('low');
+  const [severity, setSeverity] = useState('moderate');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    loadSessionData();
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true,
     }).start();
   }, []);
+
+  const loadSessionData = async () => {
+    try {
+      setLoading(true);
+      const response = await sessionService.getSessionById(sessionId);
+      if (response.success) {
+        setSessionData(response.data);
+        if (response.data.notes) setNotes(response.data.notes);
+        if (response.data.severity) setSeverity(response.data.severity);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load session data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const severityOptions = [
     { key: 'high', label: 'High', color: '#F44336', icon: 'alert-circle' },
@@ -33,14 +53,36 @@ const SessionDetailsScreen = ({ route, navigation }) => {
     }
 
     setSaving(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await sessionService.endSession(sessionId, {
+        notes: notes.trim(),
+        severity
+      });
+
+      if (response.success) {
+        Alert.alert('Success', 'Session notes saved successfully', [
+          { text: 'OK', onPress: () => navigation.navigate('CounsellorDashboard') },
+        ]);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to save session');
+      }
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to save session notes');
+    } finally {
       setSaving(false);
-      Alert.alert('Success', 'Session saved successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    }, 1000);
+    }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading session...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -50,12 +92,24 @@ const SessionDetailsScreen = ({ route, navigation }) => {
             <Card.Content>
               <View style={styles.infoRow}>
                 <Icon name="shield-account" size={20} color={theme.colors.primary} />
-                <Text style={styles.infoText}>Session with anonymous student</Text>
+                <Text style={styles.infoText}>
+                  Session with {sessionData?.student?.anonymousUsername || 'Anonymous Student'}
+                </Text>
               </View>
               <View style={styles.infoRow}>
                 <Icon name="clock-outline" size={20} color={theme.colors.placeholder} />
-                <Text style={styles.infoText}>{new Date().toLocaleString()}</Text>
+                <Text style={styles.infoText}>
+                  {sessionData?.startTime ? new Date(sessionData.startTime).toLocaleString() : new Date().toLocaleString()}
+                </Text>
               </View>
+              {sessionData?.endTime && (
+                <View style={styles.infoRow}>
+                  <Icon name="clock-check-outline" size={20} color={theme.colors.success} />
+                  <Text style={styles.infoText}>
+                    Ended: {new Date(sessionData.endTime).toLocaleString()}
+                  </Text>
+                </View>
+              )}
             </Card.Content>
           </Card>
 
@@ -135,6 +189,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    color: theme.colors.placeholder,
   },
   container: {
     flex: 1,

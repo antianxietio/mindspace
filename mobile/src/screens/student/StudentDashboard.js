@@ -19,10 +19,11 @@ import { MOOD_EMOJIS } from '../../constants';
 const StudentDashboard = ({ navigation }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { appointments } = useSelector((state) => state.appointments);
-  const { moods } = useSelector((state) => state.moods);
+  const { appointments = [] } = useSelector((state) => state.appointments || {});
+  const { moods = [] } = useSelector((state) => state.moods || {});
   const [refreshing, setRefreshing] = React.useState(false);
-  
+  const [wellnessTip, setWellnessTip] = React.useState('Taking care of your mental health is just as important as your physical health.');
+
   // Game-like animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -32,11 +33,11 @@ const StudentDashboard = ({ navigation }) => {
   const action4Scale = useRef(new Animated.Value(0)).current;
   const cardBounce = useRef(new Animated.Value(0)).current;
 
-  const upcomingAppointments = appointments.filter(
+  const upcomingAppointments = (appointments || []).filter(
     (apt) => apt.status === 'scheduled' && new Date(apt.appointmentDate) > new Date()
   ).slice(0, 2);
 
-  const todayMood = moods.find(
+  const todayMood = (moods || []).find(
     (m) => new Date(m.date).toDateString() === new Date().toDateString()
   );
 
@@ -51,7 +52,30 @@ const StudentDashboard = ({ navigation }) => {
 
   useEffect(() => {
     onRefresh();
-    
+
+    // Fetch wellness tip
+    const fetchWellnessTip = async () => {
+      try {
+        const response = await fetch('https://type.fit/api/quotes');
+        const quotes = await response.json();
+        const mentalHealthQuotes = [
+          'Your mental health is a priority. Your happiness is essential. Your self-care is a necessity. 💚',
+          'It\'s okay to not be okay. Reaching out for help is a sign of strength. 💪',
+          'Small steps every day lead to big changes. Be patient with yourself. 🌱',
+          'You are not alone. Many students face similar challenges. 🤝',
+          'Take a deep breath. This moment will pass. You are stronger than you think. 🧘',
+          'Remember to celebrate small victories. Progress, not perfection. ⭐',
+          'Your feelings are valid. It\'s okay to take time for yourself. 💙',
+          'Stress is temporary, but your wellbeing is forever. Take care of yourself. 🌸',
+        ];
+        const randomTip = mentalHealthQuotes[Math.floor(Math.random() * mentalHealthQuotes.length)];
+        setWellnessTip(randomTip);
+      } catch (error) {
+        // Fallback tip already set in state
+      }
+    };
+    fetchWellnessTip();
+
     // Sequential game-like animations
     Animated.sequence([
       // Header fade and slide
@@ -115,163 +139,162 @@ const StudentDashboard = ({ navigation }) => {
           }
         >
           <View style={styles.header}>
-          <Text style={styles.greeting}>Hello,</Text>
-          <Text style={styles.username}>{user?.anonymousUsername || user?.name || 'Student'}</Text>
-          <View style={styles.privacyBadge}>
-            <Icon name="shield-check" size={14} color="#FFFFFF" />
-            <Text style={styles.privacyText}>Anonymous Mode</Text>
-          </View>
-          <Text style={styles.subtitle}>How are you feeling today?</Text>
-        </View>
-
-        {/* Quick Actions with game-like animations */}
-        <View style={styles.quickActions}>
-          <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action1Scale }] }]}>
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.colors.primary + '15' }]}
-              onPress={() => navigation.navigate('CounsellorList')}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary }]}>
-                <Icon name="calendar-plus" size={32} color="#FFFFFF" />
-              </View>
-              <Text style={styles.actionText}>Book Session</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action2Scale }] }]}>
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.colors.secondary + '15' }]}
-              onPress={() => navigation.navigate('Journal', { screen: 'JournalEditor' })}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: theme.colors.secondary }]}>
-                <Icon name="book-edit" size={32} color="#FFFFFF" />
-              </View>
-              <Text style={styles.actionText}>Write Journal</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action3Scale }] }]}>
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.colors.success + '15' }]}
-              onPress={() => navigation.navigate('Mood')}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: theme.colors.success }]}>
-                <Icon name="emoticon-happy" size={32} color="#FFFFFF" />
-              </View>
-              <Text style={styles.actionText}>Log Mood</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action4Scale }] }]}>
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.colors.info + '15' }]}
-              onPress={() => navigation.navigate('QRCode')}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: theme.colors.info }]}>
-                <Icon name="qrcode" size={32} color="#FFFFFF" />
-              </View>
-              <Text style={styles.actionText}>My QR Code</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-
-        {/* Today's Mood */}
-        <Card style={[styles.card, styles.todayMoodCard]}>
-          <Card.Title
-            title="Today's Mood"
-            titleStyle={styles.todayMoodTitle}
-            left={(props) => <Icon name="emoticon" {...props} size={28} color={theme.colors.primary} />}
-          />
-          <Card.Content>
-            {todayMood ? (
-              <View style={styles.moodDisplay}>
-                <View style={styles.moodEmojiCircle}>
-                  <Text style={styles.moodEmoji}>{MOOD_EMOJIS[todayMood.mood] || '😐'}</Text>
-                </View>
-                <View style={styles.moodInfo}>
-                  <Text style={styles.moodText}>Logged today at {new Date(todayMood.date).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</Text>
-                  <Text style={styles.moodNote}>{todayMood.note ? `"${todayMood.note}"` : 'No note added'}</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.noMoodContainer}>
-                <Text style={styles.noMoodText}>You haven't logged your mood today</Text>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate('Mood')}
-                  icon="plus"
-                  style={styles.logMoodButton}
-                >
-                  Log Your Mood Now
-                </Button>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-
-        {/* Upcoming Appointments */}
-        <Animated.View style={{ transform: [{ scale: cardBounce }] }}>
-          <Card style={styles.card}>
-            <Card.Title
-              title="Upcoming Appointments"
-              left={(props) => <Icon name="calendar-clock" {...props} size={24} />}
-              right={(props) => (
-                <Button onPress={() => navigation.navigate('Appointments')}>
-                  View All
-                </Button>
-              )}
-            />
-          <Card.Content>
-            {upcomingAppointments.length > 0 ? (
-              upcomingAppointments.map((appointment) => (
-                <View key={appointment._id} style={styles.appointmentItem}>
-                  <View style={styles.appointmentInfo}>
-                    <Text style={styles.appointmentDate}>
-                      {new Date(appointment.appointmentDate).toLocaleDateString()}
-                    </Text>
-                    <Text style={styles.appointmentTime}>
-                      {new Date(appointment.appointmentDate).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                  </View>
-                  <Chip mode="outlined">
-                    {appointment.counsellor?.name || 'Counsellor'}
-                  </Chip>
-                </View>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No upcoming appointments</Text>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate('CounsellorList')}
-                  style={styles.emptyButton}
-                >
-                  Book Now
-                </Button>
-              </View>
-            )}
-          </Card.Content>
-          </Card>
-        </Animated.View>
-
-        {/* Wellness Tip */}
-        <Animated.View style={{ transform: [{ scale: cardBounce }] }}>
-          <Card style={styles.card}>
-          <Card.Content>
-            <View style={styles.tipHeader}>
-              <Icon name="lightbulb" size={20} color={theme.colors.warning} />
-              <Text style={styles.tipTitle}>Wellness Tip</Text>
+            <Text style={styles.greeting}>Hello,</Text>
+            <Text style={styles.username}>{user?.anonymousUsername || user?.name || 'Student'}</Text>
+            <View style={styles.privacyBadge}>
+              <Icon name="shield-check" size={14} color="#FFFFFF" />
+              <Text style={styles.privacyText}>Anonymous Mode</Text>
             </View>
-            <Text style={styles.tipText}>
-              Taking care of your mental health is just as important as your physical health.
-              Remember to take breaks and practice self-care.
-            </Text>
-          </Card.Content>
+            <Text style={styles.subtitle}>How are you feeling today?</Text>
+          </View>
+
+          {/* Quick Actions with game-like animations */}
+          <View style={styles.quickActions}>
+            <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action1Scale }] }]}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: theme.colors.primary + '15' }]}
+                onPress={() => navigation.navigate('CounsellorList')}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary }]}>
+                  <Icon name="calendar-plus" size={32} color="#FFFFFF" />
+                </View>
+                <Text style={styles.actionText}>Book Session</Text>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action2Scale }] }]}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: theme.colors.secondary + '15' }]}
+                onPress={() => navigation.navigate('Journal', { screen: 'JournalEditor' })}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: theme.colors.secondary }]}>
+                  <Icon name="book-edit" size={32} color="#FFFFFF" />
+                </View>
+                <Text style={styles.actionText}>Write Journal</Text>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action3Scale }] }]}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: theme.colors.success + '15' }]}
+                onPress={() => navigation.navigate('Mood')}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: theme.colors.success }]}>
+                  <Icon name="emoticon-happy" size={32} color="#FFFFFF" />
+                </View>
+                <Text style={styles.actionText}>Log Mood</Text>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={[styles.actionCardWrapper, { transform: [{ scale: action4Scale }] }]}>
+              <TouchableOpacity
+                style={[styles.actionCard, { backgroundColor: theme.colors.info + '15' }]}
+                onPress={() => navigation.navigate('QRCode')}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: theme.colors.info }]}>
+                  <Icon name="qrcode" size={32} color="#FFFFFF" />
+                </View>
+                <Text style={styles.actionText}>My QR Code</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+
+          {/* Today's Mood */}
+          <Card style={[styles.card, styles.todayMoodCard]}>
+            <Card.Title
+              title="Today's Mood"
+              titleStyle={styles.todayMoodTitle}
+              left={(props) => <Icon name="emoticon" {...props} size={28} color={theme.colors.primary} />}
+            />
+            <Card.Content>
+              {todayMood ? (
+                <View style={styles.moodDisplay}>
+                  <View style={styles.moodEmojiCircle}>
+                    <Text style={styles.moodEmoji}>{MOOD_EMOJIS[todayMood.mood] || '😐'}</Text>
+                  </View>
+                  <View style={styles.moodInfo}>
+                    <Text style={styles.moodText}>Logged today at {new Date(todayMood.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    <Text style={styles.moodNote}>{todayMood.note ? `"${todayMood.note}"` : 'No note added'}</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.noMoodContainer}>
+                  <Text style={styles.noMoodText}>You haven't logged your mood today</Text>
+                  <Button
+                    mode="contained"
+                    onPress={() => navigation.navigate('Mood')}
+                    icon="plus"
+                    style={styles.logMoodButton}
+                  >
+                    Log Your Mood Now
+                  </Button>
+                </View>
+              )}
+            </Card.Content>
           </Card>
-        </Animated.View>
+
+          {/* Upcoming Appointments */}
+          <Animated.View style={{ transform: [{ scale: cardBounce }] }}>
+            <Card style={styles.card}>
+              <Card.Title
+                title="Upcoming Appointments"
+                left={(props) => <Icon name="calendar-clock" {...props} size={24} />}
+                right={(props) => (
+                  <Button onPress={() => navigation.navigate('Appointments')}>
+                    View All
+                  </Button>
+                )}
+              />
+              <Card.Content>
+                {upcomingAppointments.length > 0 ? (
+                  upcomingAppointments.map((appointment) => (
+                    <View key={appointment._id} style={styles.appointmentItem}>
+                      <View style={styles.appointmentInfo}>
+                        <Text style={styles.appointmentDate}>
+                          {new Date(appointment.appointmentDate).toLocaleDateString()}
+                        </Text>
+                        <Text style={styles.appointmentTime}>
+                          {new Date(appointment.appointmentDate).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                      </View>
+                      <Chip mode="outlined">
+                        {appointment.counsellor?.name || 'Counsellor'}
+                      </Chip>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>No upcoming appointments</Text>
+                    <Button
+                      mode="contained"
+                      onPress={() => navigation.navigate('CounsellorList')}
+                      style={styles.emptyButton}
+                    >
+                      Book Now
+                    </Button>
+                  </View>
+                )}
+              </Card.Content>
+            </Card>
+          </Animated.View>
+
+          {/* Wellness Tip */}
+          <Animated.View style={{ transform: [{ scale: cardBounce }] }}>
+            <Card style={styles.card}>
+              <Card.Content>
+                <View style={styles.tipHeader}>
+                  <Icon name="lightbulb" size={20} color={theme.colors.warning} />
+                  <Text style={styles.tipTitle}>Daily Wellness Tip</Text>
+                </View>
+                <Text style={styles.tipText}>
+                  {wellnessTip}
+                </Text>
+              </Card.Content>
+            </Card>
+          </Animated.View>
         </ScrollView>
       </Animated.View>
     </SafeAreaView>

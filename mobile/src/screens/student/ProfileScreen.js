@@ -10,7 +10,7 @@ import { spacing, theme } from '../../constants/theme';
 const ProfileScreen = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -67,7 +67,7 @@ const ProfileScreen = () => {
             <Text style={styles.title}>{user?.name || 'Student'}</Text>
             <Text style={styles.email}>{user?.email}</Text>
           </Animated.View>
-          
+
           {/* Anonymous ID Card */}
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <Card style={styles.anonymousCard}>
@@ -136,7 +136,7 @@ const ProfileScreen = () => {
                   <Icon name="shield-lock" size={48} color={theme.colors.success} />
                   <Text style={styles.privacyTitle}>Your Data is Safe</Text>
                   <Text style={styles.privacyDescription}>
-                    All your activities, journals, and sessions are encrypted and anonymous. 
+                    All your activities, journals, and sessions are encrypted and anonymous.
                     We never share your personal information.
                   </Text>
                 </View>
@@ -144,10 +144,10 @@ const ProfileScreen = () => {
             </Card>
           </Animated.View>
 
-          <Button 
-            mode="contained" 
-            onPress={handleLogout} 
-            style={styles.button} 
+          <Button
+            mode="contained"
+            onPress={handleLogout}
+            style={styles.button}
             buttonColor={theme.colors.error}
             icon="logout"
             contentStyle={styles.logoutButtonContent}

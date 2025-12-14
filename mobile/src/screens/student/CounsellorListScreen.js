@@ -9,7 +9,7 @@ import { spacing, theme } from '../../constants/theme';
 
 const CounsellorListScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { counsellors, isLoading } = useSelector((state) => state.appointments);
+  const { counsellors = [], isLoading } = useSelector((state) => state.appointments || {});
   const [searchQuery, setSearchQuery] = React.useState('');
 
   useEffect(() => {
@@ -29,20 +29,40 @@ const CounsellorListScreen = ({ navigation }) => {
         <Card.Content>
           <View style={styles.cardHeader}>
             <Avatar.Icon
-              size={50}
+              size={60}
               icon="account"
               style={{ backgroundColor: theme.colors.primary }}
             />
             <View style={styles.counsellorInfo}>
               <Text style={styles.counsellorName}>{item.name}</Text>
-              <Text style={styles.specialization}>{item.specialization}</Text>
-              <Text style={styles.department}>{item.department}</Text>
-            </View>
-            <View style={styles.ratingContainer}>
-              <Icon name="star" size={16} color="#FFB300" />
-              <Text style={styles.rating}>{item.rating}</Text>
+              {item.designation && (
+                <View style={styles.infoRow}>
+                  <Icon name="briefcase-outline" size={14} color={theme.colors.placeholder} />
+                  <Text style={styles.infoText}>{item.designation}</Text>
+                </View>
+              )}
+              {item.specialization && (
+                <View style={styles.infoRow}>
+                  <Icon name="star" size={14} color={theme.colors.placeholder} />
+                  <Text style={styles.infoText}>{item.specialization}</Text>
+                </View>
+              )}
+              {item.experience && (
+                <View style={styles.infoRow}>
+                  <Icon name="clock-outline" size={14} color={theme.colors.placeholder} />
+                  <Text style={styles.infoText}>{item.experience}</Text>
+                </View>
+              )}
             </View>
           </View>
+
+          {item.location && (
+            <View style={styles.locationRow}>
+              <Icon name="map-marker" size={16} color={theme.colors.primary} />
+              <Text style={styles.locationText}>{item.location}</Text>
+            </View>
+          )}
+
           <View style={styles.footer}>
             <Chip
               icon="circle"
@@ -55,6 +75,7 @@ const CounsellorListScreen = ({ navigation }) => {
                 backgroundColor: item.isActive ? '#FF980020' : '#4CAF5020',
                 marginRight: spacing.sm
               }}
+              compact
             >
               {item.isActive ? 'In Session' : 'Available'}
             </Chip>
@@ -62,8 +83,9 @@ const CounsellorListScreen = ({ navigation }) => {
               icon="calendar"
               mode="outlined"
               style={styles.chip}
+              compact
             >
-              {item.availableSlots} slots
+              {item.availableSlots || 0} slots
             </Chip>
           </View>
         </Card.Content>
@@ -142,16 +164,31 @@ const styles = StyleSheet.create({
   counsellorName: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: spacing.xs,
   },
-  specialization: {
-    fontSize: 14,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 13,
+    color: theme.colors.text,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primaryContainer,
+    padding: spacing.sm,
+    borderRadius: 8,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  locationText: {
+    fontSize: 13,
     color: theme.colors.primary,
-    marginTop: 2,
-  },
-  department: {
-    fontSize: 12,
-    color: theme.colors.placeholder,
-    marginTop: 2,
+    fontWeight: '500',
   },
   ratingContainer: {
     flexDirection: 'row',

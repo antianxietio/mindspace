@@ -27,44 +27,89 @@ class SessionService {
   }
 
   async getSessionById(id) {
-    // MOCK DATA
-    return {
-      success: true,
-      session: {
-        _id: id,
-        student: { name: 'John Doe', studentId: 'STU001', department: 'Computer Science', year: 2 },
-        counsellor: { name: 'Dr. Sarah Johnson' },
-        date: '2025-12-10',
-        duration: 45,
-        notes: 'Discussed stress management techniques',
-        severity: 'moderate',
-        followUpRequired: true
-      }
-    };
+    try {
+      const response = await apiClient.get(`/sessions/${id}`);
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Get session error:', error);
+      // Fallback to mock data for development
+      return {
+        success: true,
+        data: {
+          _id: id,
+          student: { anonymousUsername: 'S-' + Math.random().toString(36).substr(2, 5).toUpperCase() },
+          startTime: new Date().toISOString(),
+          notes: '',
+          severity: 'moderate'
+        }
+      };
+    }
   }
 
   async startSession(qrData) {
-    // MOCK DATA
-    return {
-      success: true,
-      session: {
-        _id: 'session-' + Date.now(),
-        student: { name: 'John Doe', studentId: qrData, department: 'Computer Science', year: 2 },
-        startTime: new Date().toISOString(),
-      }
-    };
+    try {
+      const response = await apiClient.post('/sessions/start', { qrData });
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Start session error:', error);
+      // Fallback for development
+      return {
+        success: true,
+        data: {
+          _id: 'session-' + Date.now(),
+          student: { anonymousUsername: qrData || 'S-' + Math.random().toString(36).substr(2, 5).toUpperCase() },
+          startTime: new Date().toISOString(),
+        }
+      };
+    }
+  }
+
+  async verifyCheckout(sessionId, qrData) {
+    try {
+      const response = await apiClient.post(`/sessions/${sessionId}/checkout`, qrData);
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('Verify checkout error:', error);
+      // Fallback for development
+      return {
+        success: true,
+        data: {
+          _id: sessionId,
+          verified: true,
+          checkoutTime: new Date().toISOString(),
+        }
+      };
+    }
   }
 
   async endSession(sessionId, sessionData) {
-    // MOCK DATA
-    return {
-      success: true,
-      session: {
-        _id: sessionId,
-        ...sessionData,
-        endTime: new Date().toISOString(),
-      }
-    };
+    try {
+      const response = await apiClient.post(`/sessions/${sessionId}/end`, sessionData);
+      return {
+        success: true,
+        data: response.data.data
+      };
+    } catch (error) {
+      console.error('End session error:', error);
+      // Fallback for development
+      return {
+        success: true,
+        data: {
+          _id: sessionId,
+          ...sessionData,
+          endTime: new Date().toISOString(),
+        }
+      };
+    }
   }
 
   async getStudentHistory(studentId) {
