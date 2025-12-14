@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, FAB, Chip, IconButton, Searchbar } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -90,39 +91,44 @@ const JournalListScreen = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
-      <Searchbar
-        placeholder="Search journals"
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
-      <FlatList
-        data={filteredJournals}
-        renderItem={renderJournal}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="book-open-outline" size={64} color={theme.colors.disabled} />
-            <Text style={styles.emptyText}>No journal entries yet</Text>
-            <Text style={styles.emptySubtext}>Start writing to track your thoughts</Text>
-          </View>
-        }
-      />
-      <FAB
-        style={styles.fab}
-        icon="plus"
-        onPress={() => navigation.navigate('JournalEditor')}
-      />
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
+        <Searchbar
+          placeholder="Search journals"
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchbar}
+        />
+        <FlatList
+          data={filteredJournals}
+          renderItem={renderJournal}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Icon name="book-open-outline" size={64} color={theme.colors.disabled} />
+              <Text style={styles.emptyText}>No journal entries yet</Text>
+              <Text style={styles.emptySubtext}>Start writing to track your thoughts</Text>
+            </View>
+          }
+        />
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={() => navigation.navigate('JournalEditor')}
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
   },
   searchbar: {
     margin: spacing.md,

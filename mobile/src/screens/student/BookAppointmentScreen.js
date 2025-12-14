@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button, Card, TextInput, Chip, ActivityIndicator } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -50,94 +51,99 @@ const BookAppointmentScreen = ({ route, navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.counsellorCard}>
-        <Card.Content>
-          <Text style={styles.counsellorName}>{counsellor?.name}</Text>
-          <Text style={styles.specialization}>{counsellor?.specialization}</Text>
-        </Card.Content>
-      </Card>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container}>
+        <Card style={styles.counsellorCard}>
+          <Card.Content>
+            <Text style={styles.counsellorName}>{counsellor?.name}</Text>
+            <Text style={styles.specialization}>{counsellor?.specialization}</Text>
+          </Card.Content>
+        </Card>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Appointment Type</Text>
-        <View style={styles.typeContainer}>
-          <Chip
-            selected={appointmentType === 'individual'}
-            onPress={() => setAppointmentType('individual')}
-            style={styles.typeChip}
-          >
-            Individual
-          </Chip>
-          <Chip
-            selected={appointmentType === 'group'}
-            onPress={() => setAppointmentType('group')}
-            style={styles.typeChip}
-          >
-            Group
-          </Chip>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Date</Text>
-        <Text style={styles.dateText}>{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Available Time Slots</Text>
-        {isLoading ? (
-          <ActivityIndicator style={styles.loader} />
-        ) : (
-          <View style={styles.slotsContainer}>
-            {timeSlots.map((slot) => (
-              <TouchableOpacity
-                key={slot._id}
-                disabled={!slot.available}
-                onPress={() => setSelectedSlot(slot)}
-              >
-                <Chip
-                  selected={selectedSlot?._id === slot._id}
-                  disabled={!slot.available}
-                  style={styles.slotChip}
-                  textStyle={!slot.available && styles.disabledText}
-                >
-                  {slot.time}
-                </Chip>
-              </TouchableOpacity>
-            ))}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Appointment Type</Text>
+          <View style={styles.typeContainer}>
+            <Chip
+              selected={appointmentType === 'individual'}
+              onPress={() => setAppointmentType('individual')}
+              style={styles.typeChip}
+            >
+              Individual
+            </Chip>
+            <Chip
+              selected={appointmentType === 'group'}
+              onPress={() => setAppointmentType('group')}
+              style={styles.typeChip}
+            >
+              Group
+            </Chip>
           </View>
-        )}
-      </View>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Reason for Appointment</Text>
-        <TextInput
-          mode="outlined"
-          value={reason}
-          onChangeText={setReason}
-          placeholder="E.g., Stress management, Career guidance"
-          multiline
-          numberOfLines={4}
-          style={styles.reasonInput}
-        />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Select Date</Text>
+          <Text style={styles.dateText}>{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+        </View>
 
-      <Button
-        mode="contained"
-        onPress={handleBookAppointment}
-        style={styles.bookButton}
-        disabled={!selectedSlot || isLoading}
-      >
-        Book Appointment
-      </Button>
-    </ScrollView>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Available Time Slots</Text>
+          {isLoading ? (
+            <ActivityIndicator style={styles.loader} />
+          ) : (
+            <View style={styles.slotsContainer}>
+              {timeSlots.map((slot) => (
+                <TouchableOpacity
+                  key={slot._id}
+                  disabled={!slot.available}
+                  onPress={() => setSelectedSlot(slot)}
+                >
+                  <Chip
+                    selected={selectedSlot?._id === slot._id}
+                    disabled={!slot.available}
+                    style={styles.slotChip}
+                    textStyle={!slot.available && styles.disabledText}
+                  >
+                    {slot.time}
+                  </Chip>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Reason for Appointment</Text>
+          <TextInput
+            mode="outlined"
+            value={reason}
+            onChangeText={setReason}
+            placeholder="E.g., Stress management, Career guidance"
+            multiline
+            numberOfLines={4}
+            style={styles.reasonInput}
+          />
+        </View>
+
+        <Button
+          mode="contained"
+          onPress={handleBookAppointment}
+          style={styles.bookButton}
+          disabled={!selectedSlot || isLoading}
+        >
+          Book Appointment
+        </Button>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
   },
   counsellorCard: {
     margin: spacing.md,

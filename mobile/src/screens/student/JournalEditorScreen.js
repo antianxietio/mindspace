@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextInput, Button, Chip } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { createJournal, updateJournal } from '../../redux/slices/journalSlice';
@@ -60,90 +61,95 @@ const JournalEditorScreen = ({ route, navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <TextInput
-          label="Title"
-          value={title}
-          onChangeText={setTitle}
-          mode="outlined"
-          style={styles.input}
-          placeholder="Give your journal a title"
-        />
-
-        <TextInput
-          label="What's on your mind?"
-          value={content}
-          onChangeText={setContent}
-          mode="outlined"
-          multiline
-          numberOfLines={15}
-          style={[styles.input, styles.contentInput]}
-          placeholder="Write your thoughts here..."
-        />
-
-        <View style={styles.section}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
           <TextInput
-            label="How are you feeling?"
-            value=""
-            editable={false}
+            label="Title"
+            value={title}
+            onChangeText={setTitle}
             mode="outlined"
-            style={styles.label}
+            style={styles.input}
+            placeholder="Give your journal a title"
           />
-          <View style={styles.moodContainer}>
-            {moods.map((m) => (
-              <Chip
-                key={m}
-                selected={mood === m}
-                onPress={() => setMood(m)}
-                style={styles.chip}
-              >
-                {m}
-              </Chip>
-            ))}
-          </View>
-        </View>
 
-        <View style={styles.section}>
           <TextInput
-            label="Tags"
-            value=""
-            editable={false}
+            label="What's on your mind?"
+            value={content}
+            onChangeText={setContent}
             mode="outlined"
-            style={styles.label}
+            multiline
+            numberOfLines={15}
+            style={[styles.input, styles.contentInput]}
+            placeholder="Write your thoughts here..."
           />
-          <View style={styles.tagsContainer}>
-            {commonTags.map((tag) => (
-              <Chip
-                key={tag}
-                selected={tags.includes(tag)}
-                onPress={() => toggleTag(tag)}
-                style={styles.chip}
-              >
-                {tag}
-              </Chip>
-            ))}
-          </View>
-        </View>
 
-        <Button
-          mode="contained"
-          onPress={handleSave}
-          loading={isSaving}
-          disabled={isSaving}
-          style={styles.saveButton}
-        >
-          {journal ? 'Update Journal' : 'Save Journal'}
-        </Button>
-      </View>
-    </ScrollView>
+          <View style={styles.section}>
+            <TextInput
+              label="How are you feeling?"
+              value=""
+              editable={false}
+              mode="outlined"
+              style={styles.label}
+            />
+            <View style={styles.moodContainer}>
+              {moods.map((m) => (
+                <Chip
+                  key={m}
+                  selected={mood === m}
+                  onPress={() => setMood(m)}
+                  style={styles.chip}
+                >
+                  {m}
+                </Chip>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <TextInput
+              label="Tags"
+              value=""
+              editable={false}
+              mode="outlined"
+              style={styles.label}
+            />
+            <View style={styles.tagsContainer}>
+              {commonTags.map((tag) => (
+                <Chip
+                  key={tag}
+                  selected={tags.includes(tag)}
+                  onPress={() => toggleTag(tag)}
+                  style={styles.chip}
+                >
+                  {tag}
+                </Chip>
+              ))}
+            </View>
+          </View>
+
+          <Button
+            mode="contained"
+            onPress={handleSave}
+            loading={isSaving}
+            disabled={isSaving}
+            style={styles.saveButton}
+          >
+            {journal ? 'Update Journal' : 'Save Journal'}
+          </Button>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
   },
   content: {
     padding: spacing.md,

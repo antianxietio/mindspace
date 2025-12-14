@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, Chip, Avatar, ActivityIndicator, Searchbar } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -44,11 +45,25 @@ const CounsellorListScreen = ({ navigation }) => {
           </View>
           <View style={styles.footer}>
             <Chip
+              icon="circle"
+              mode="flat"
+              textStyle={{
+                color: item.isActive ? '#FF9800' : '#4CAF50',
+                fontSize: 12
+              }}
+              style={{
+                backgroundColor: item.isActive ? '#FF980020' : '#4CAF5020',
+                marginRight: spacing.sm
+              }}
+            >
+              {item.isActive ? 'In Session' : 'Available'}
+            </Chip>
+            <Chip
               icon="calendar"
               mode="outlined"
               style={styles.chip}
             >
-              {item.availableSlots} slots available
+              {item.availableSlots} slots
             </Chip>
           </View>
         </Card.Content>
@@ -58,40 +73,47 @@ const CounsellorListScreen = ({ navigation }) => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Searchbar
-        placeholder="Search counsellors"
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
-      <FlatList
-        data={filteredCounsellors}
-        renderItem={renderCounsellor}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="account-search" size={64} color={theme.colors.disabled} />
-            <Text style={styles.emptyText}>No counsellors found</Text>
-          </View>
-        }
-      />
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.container}>
+        <Searchbar
+          placeholder="Search counsellors"
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchbar}
+        />
+        <FlatList
+          data={filteredCounsellors}
+          renderItem={renderCounsellor}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Icon name="account-search" size={64} color={theme.colors.disabled} />
+              <Text style={styles.emptyText}>No counsellors found</Text>
+            </View>
+          }
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -142,7 +164,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   chip: {
     backgroundColor: theme.colors.surface,

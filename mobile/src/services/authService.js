@@ -3,18 +3,45 @@ import apiClient from './apiClient';
 class AuthService {
   async login(credentials) {
     // MOCK DATA - Frontend testing only
+    const role = credentials.email.includes('counsellor') ? 'counsellor' :
+      credentials.email.includes('management') ? 'management' : 'student';
+
+    const user = {
+      _id: 'user-' + Date.now(),
+      email: credentials.email,
+      role,
+      isOnboarded: true,
+      name: credentials.email.split('@')[0],
+    };
+
+    // Add student-specific fields
+    if (role === 'student') {
+      user.anonymousUsername = this.generateAnonymousUsername();
+      user.qrSecret = 'QR-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      user.year = '2';
+      user.department = 'Computer Science';
+    }
+
+    // Add counsellor-specific fields
+    if (role === 'counsellor') {
+      user.specialization = 'General Counseling';
+      user.isActive = false;
+    }
+
     return {
       success: true,
       token: 'mock-jwt-token-' + Date.now(),
-      user: {
-        _id: 'user-' + Date.now(),
-        email: credentials.email,
-        role: credentials.email.includes('counsellor') ? 'counsellor' :
-          credentials.email.includes('management') ? 'management' : 'student',
-        isOnboarded: true,
-        name: credentials.email.split('@')[0],
-      }
+      user,
     };
+  }
+
+  generateAnonymousUsername() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = 'S-';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   }
 
   async register(userData) {
@@ -25,19 +52,26 @@ class AuthService {
       user: {
         _id: 'user-' + Date.now(),
         email: userData.email,
-        role: 'student',
-        isOnboarded: false,
+        role: userData.role || 'student',
+        isOnboarded: userData.role !== 'student',
         name: userData.name || userData.email.split('@')[0],
+        anonymousUsername: userData.role === 'student' ? null : undefined,
+        specialization: userData.specialization,
       }
     };
   }
 
   async completeOnboarding(onboardingData) {
     // MOCK DATA - Frontend testing only
+    const anonymousUsername = this.generateAnonymousUsername();
+    const qrSecret = 'QR-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
     return {
       success: true,
       user: {
         ...onboardingData,
+        anonymousUsername,
+        qrSecret,
         isOnboarded: true,
       }
     };

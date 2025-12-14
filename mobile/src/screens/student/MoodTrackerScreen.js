@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Card, Button, TextInput, Chip } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -62,145 +63,157 @@ const MoodTrackerScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text style={styles.sectionTitle}>How are you feeling today?</Text>
-          <View style={styles.moodOptions}>
-            {moodOptions.map((mood) => (
-              <TouchableOpacity
-                key={mood.key}
-                style={[
-                  styles.moodButton,
-                  selectedMood === mood.key && {
-                    backgroundColor: mood.color + '30',
-                    borderColor: mood.color,
-                    borderWidth: 2,
-                  },
-                ]}
-                onPress={() => setSelectedMood(mood.key)}
-              >
-                <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-                <Text style={styles.moodLabel}>{mood.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Card.Content>
-      </Card>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.sectionTitle}>How are you feeling today?</Text>
+            <View style={styles.moodOptions}>
+              {moodOptions.map((mood) => (
+                <TouchableOpacity
+                  key={mood.key}
+                  style={[
+                    styles.moodButton,
+                    selectedMood === mood.key && {
+                      backgroundColor: mood.color + '30',
+                      borderColor: mood.color,
+                      borderWidth: 2,
+                    },
+                  ]}
+                  onPress={() => setSelectedMood(mood.key)}
+                >
+                  <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+                  <Text style={styles.moodLabel}>{mood.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Card.Content>
+        </Card>
 
-      {selectedMood && (
-        <>
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.sectionTitle}>Intensity</Text>
-              <View style={styles.intensityContainer}>
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.intensityButton,
-                      intensity === level && styles.intensityButtonActive,
-                    ]}
-                    onPress={() => setIntensity(level)}
-                  >
-                    <Text
+        {selectedMood && (
+          <>
+            <Card style={styles.card}>
+              <Card.Content>
+                <Text style={styles.sectionTitle}>Intensity</Text>
+                <View style={styles.intensityContainer}>
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <TouchableOpacity
+                      key={level}
                       style={[
-                        styles.intensityText,
-                        intensity === level && styles.intensityTextActive,
+                        styles.intensityButton,
+                        intensity === level && styles.intensityButtonActive,
                       ]}
+                      onPress={() => setIntensity(level)}
                     >
-                      {level}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Card.Content>
-          </Card>
+                      <Text
+                        style={[
+                          styles.intensityText,
+                          intensity === level && styles.intensityTextActive,
+                        ]}
+                      >
+                        {level}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </Card.Content>
+            </Card>
 
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.sectionTitle}>Activities</Text>
-              <View style={styles.activitiesContainer}>
-                {activities.map((activity) => (
-                  <Chip
-                    key={activity}
-                    selected={selectedActivities.includes(activity)}
-                    onPress={() => toggleActivity(activity)}
-                    style={styles.activityChip}
-                  >
-                    {activity}
-                  </Chip>
-                ))}
-              </View>
-            </Card.Content>
-          </Card>
+            <Card style={styles.card}>
+              <Card.Content>
+                <Text style={styles.sectionTitle}>Activities</Text>
+                <View style={styles.activitiesContainer}>
+                  {activities.map((activity) => (
+                    <Chip
+                      key={activity}
+                      selected={selectedActivities.includes(activity)}
+                      onPress={() => toggleActivity(activity)}
+                      style={styles.activityChip}
+                    >
+                      {activity}
+                    </Chip>
+                  ))}
+                </View>
+              </Card.Content>
+            </Card>
 
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.sectionTitle}>Note (Optional)</Text>
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                mode="outlined"
-                multiline
-                numberOfLines={3}
-                placeholder="Add any additional thoughts..."
-                style={styles.noteInput}
-              />
-            </Card.Content>
-          </Card>
+            <Card style={styles.card}>
+              <Card.Content>
+                <Text style={styles.sectionTitle}>Note (Optional)</Text>
+                <TextInput
+                  value={note}
+                  onChangeText={setNote}
+                  mode="outlined"
+                  multiline
+                  numberOfLines={3}
+                  placeholder="Add any additional thoughts..."
+                  style={styles.noteInput}
+                />
+              </Card.Content>
+            </Card>
 
-          <Button
-            mode="contained"
-            onPress={handleLogMood}
-            style={styles.logButton}
-          >
-            Log Mood
-          </Button>
-        </>
-      )}
+            <Button
+              mode="contained"
+              onPress={handleLogMood}
+              style={styles.logButton}
+            >
+              Log Mood
+            </Button>
+          </>
+        )}
 
-      <Card style={styles.card}>
-        <Card.Title title="Recent Moods" />
-        <Card.Content>
-          {(moods || []).slice(0, 7).map((mood) => (
-            <View key={mood._id} style={styles.moodEntry}>
-              <View style={styles.moodEntryLeft}>
-                <Text style={styles.moodEntryEmoji}>
-                  {moodOptions.find(m => m.key === mood.mood)?.emoji || '😐'}
-                </Text>
-                <View style={styles.moodEntryInfo}>
-                  <Text style={styles.moodEntryMood}>{mood.mood}</Text>
-                  <Text style={styles.moodEntryDate}>
-                    {new Date(mood.date).toLocaleDateString()}
+        <Card style={styles.card}>
+          <Card.Title title="Recent Moods" />
+          <Card.Content>
+            {(moods || []).slice(0, 7).map((mood) => (
+              <View key={mood._id} style={styles.moodEntry}>
+                <View style={styles.moodEntryLeft}>
+                  <Text style={styles.moodEntryEmoji}>
+                    {moodOptions.find(m => m.key === mood.mood)?.emoji || '😐'}
                   </Text>
+                  <View style={styles.moodEntryInfo}>
+                    <Text style={styles.moodEntryMood}>
+                      {moodOptions.find(m => m.key === mood.mood)?.label || mood.mood}
+                    </Text>
+                    <Text style={styles.moodEntryDate}>
+                      {new Date(mood.date).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.moodEntryIntensity}>
+                  {Array.from({ length: mood.intensity }).map((_, i) => (
+                    <Icon
+                      key={i}
+                      name="circle"
+                      size={8}
+                      color={getMoodColor(mood.mood)}
+                    />
+                  ))}
                 </View>
               </View>
-              <View style={styles.moodEntryIntensity}>
-                {Array.from({ length: mood.intensity }).map((_, i) => (
-                  <Icon
-                    key={i}
-                    name="circle"
-                    size={8}
-                    color={getMoodColor(mood.mood)}
-                  />
-                ))}
-              </View>
-            </View>
-          ))}
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            ))}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing.xl,
+  },
   card: {
-    margin: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     fontSize: 16,
@@ -210,10 +223,12 @@ const styles = StyleSheet.create({
   moodOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    gap: spacing.sm,
   },
   moodButton: {
     width: '30%',
+    minWidth: 100,
     aspectRatio: 1,
     borderRadius: 12,
     backgroundColor: theme.colors.surface,
@@ -293,7 +308,6 @@ const styles = StyleSheet.create({
   moodEntryMood: {
     fontSize: 16,
     fontWeight: '600',
-    textTransform: 'capitalize',
   },
   moodEntryDate: {
     fontSize: 12,

@@ -6,9 +6,9 @@ class AppointmentService {
     return {
       success: true,
       counsellors: [
-        { _id: '1', name: 'Dr. Sarah Johnson', department: 'Psychology', specialization: 'Anxiety & Depression', rating: 4.8, availableSlots: 12 },
-        { _id: '2', name: 'Dr. Michael Chen', department: 'Career Counseling', specialization: 'Career Development', rating: 4.6, availableSlots: 8 },
-        { _id: '3', name: 'Dr. Emily Williams', department: 'Academic', specialization: 'Study Skills', rating: 4.9, availableSlots: 5 },
+        { _id: '1', name: 'Dr. Sarah Johnson', department: 'Psychology', specialization: 'Anxiety & Depression', rating: 4.8, availableSlots: 12, isActive: false },
+        { _id: '2', name: 'Dr. Michael Chen', department: 'Career Counseling', specialization: 'Career Development', rating: 4.6, availableSlots: 8, isActive: true },
+        { _id: '3', name: 'Dr. Emily Williams', department: 'Academic', specialization: 'Study Skills', rating: 4.9, availableSlots: 5, isActive: false },
       ]
     };
   }

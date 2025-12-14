@@ -8,7 +8,6 @@ class SessionService {
       sessions: [
         {
           _id: '1',
-          student: { name: 'John Doe', studentId: 'STU001' },
           counsellor: { name: 'Dr. Sarah Johnson' },
           date: '2025-12-10',
           duration: 45,
@@ -17,7 +16,6 @@ class SessionService {
         },
         {
           _id: '2',
-          student: { name: 'Jane Smith', studentId: 'STU002' },
           counsellor: { name: 'Dr. Sarah Johnson' },
           date: '2025-12-08',
           duration: 60,
