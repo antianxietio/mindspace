@@ -1,16 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
-const Mood = require('../models/Mood');
+const supabase = require('../config/supabase');
 
 // @route   GET /api/moods
 // @desc    Get all moods for logged in student
 // @access  Private (Student)
 router.get('/', protect, authorize('student'), async (req, res) => {
   try {
-    const moods = await Mood.find({ student: req.user._id })
-      .sort('-date')
+    const { data: moods, error } = await supabase
+      .from('moods')
+      .select('*')
+      .eq('student_id', req.user.id)
+      .order('date', { ascending: false })
       .limit(90); // Last 90 days
+
+    if (error) throw error;
 
     res.json({
       success: true,
@@ -18,6 +23,7 @@ router.get('/', protect, authorize('student'), async (req, res) => {
       data: moods
     });
   } catch (error) {
+    console.error('Error fetching moods:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -29,57 +35,73 @@ router.post('/', protect, authorize('student'), async (req, res) => {
   try {
     const { date, moodLevel, moodEmoji, note } = req.body;
 
-    // Check if mood already logged for this date
-    const existingMood = await Mood.findOne({
-      student: req.user._id,
-      date: new Date(date).setHours(0, 0, 0, 0)
-    });
+    // Check if mood already exists for today
+    const { data: existing } = await supabase
+      .from('moods')
+      .select('id')
+      .eq('student_id', req.user.id)
+      .eq('date', date)
+      .limit(1);
 
-    if (existingMood) {
+    if (existing && existing.length > 0) {
       // Update existing mood
-      existingMood.moodLevel = moodLevel;
-      existingMood.moodEmoji = moodEmoji;
-      existingMood.note = note;
-      await existingMood.save();
+      const { data: mood, error } = await supabase
+        .from('moods')
+        .update({ mood_level: moodLevel, mood_emoji: moodEmoji, note })
+        .eq('id', existing[0].id)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       return res.json({
         success: true,
-        data: existingMood
+        data: mood
       });
     }
 
     // Create new mood
-    const mood = await Mood.create({
-      student: req.user._id,
-      date,
-      moodLevel,
-      moodEmoji,
-      note
-    });
+    const { data: mood, error } = await supabase
+      .from('moods')
+      .insert([{
+        student_id: req.user.id,
+        date,
+        mood_level: moodLevel,
+        mood_emoji: moodEmoji,
+        note
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
 
     res.status(201).json({
       success: true,
       data: mood
     });
   } catch (error) {
+    console.error('Error logging mood:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // @route   GET /api/moods/month
-// @desc    Get moods for a specific month
+// @desc    Get monthly mood summary
 // @access  Private (Student)
 router.get('/month', protect, authorize('student'), async (req, res) => {
   try {
-    const { year, month } = req.query;
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    const { data: moods, error } = await supabase
+      .from('moods')
+      .select('*')
+      .eq('student_id', req.user.id)
+      .gte('date', startOfMonth.toISOString())
+      .order('date', { ascending: true });
 
-    const moods = await Mood.find({
-      student: req.user._id,
-      date: { $gte: startDate, $lte: endDate }
-    }).sort('date');
+    if (error) throw error;
 
     res.json({
       success: true,
@@ -87,6 +109,7 @@ router.get('/month', protect, authorize('student'), async (req, res) => {
       data: moods
     });
   } catch (error) {
+    console.error('Error fetching monthly moods:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -96,19 +119,23 @@ router.get('/month', protect, authorize('student'), async (req, res) => {
 // @access  Private (Student)
 router.get('/today', protect, authorize('student'), async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date().toISOString().split('T')[0];
 
-    const mood = await Mood.findOne({
-      student: req.user._id,
-      date: today
-    });
+    const { data: mood, error } = await supabase
+      .from('moods')
+      .select('*')
+      .eq('student_id', req.user.id)
+      .eq('date', today)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
 
     res.json({
       success: true,
-      data: mood
+      data: mood || null
     });
   } catch (error) {
+    console.error('Error fetching today mood:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

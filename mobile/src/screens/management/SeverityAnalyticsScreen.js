@@ -9,12 +9,19 @@ import { spacing, theme } from '../../constants/theme';
 
 const SeverityAnalyticsScreen = () => {
   const dispatch = useDispatch();
-  const { sessions = [] } = useSelector((state) => state.sessions || {});
+  const sessions = useSelector((state) => state.sessions?.sessions || []);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
-    dispatch(fetchSessions());
+    const loadSessions = async () => {
+      try {
+        await dispatch(fetchSessions());
+      } catch (error) {
+        console.log('Error loading sessions:', error);
+      }
+    };
+    loadSessions();
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -30,10 +37,10 @@ const SeverityAnalyticsScreen = () => {
     ]).start();
   }, [dispatch]);
 
-  const totalSessions = sessions?.length || 0;
-  const highSeverity = sessions?.filter((s) => s.severity === 'high').length || 0;
-  const moderateSeverity = sessions?.filter((s) => s.severity === 'moderate').length || 0;
-  const lowSeverity = sessions?.filter((s) => s.severity === 'low').length || 0;
+  const totalSessions = Array.isArray(sessions) ? sessions.length : 0;
+  const highSeverity = Array.isArray(sessions) ? sessions.filter((s) => s?.severity === 'high').length : 0;
+  const moderateSeverity = Array.isArray(sessions) ? sessions.filter((s) => s?.severity === 'moderate').length : 0;
+  const lowSeverity = Array.isArray(sessions) ? sessions.filter((s) => s?.severity === 'low').length : 0;
 
   const highPercentage = totalSessions > 0 ? (highSeverity / totalSessions) * 100 : 0;
   const moderatePercentage = totalSessions > 0 ? (moderateSeverity / totalSessions) * 100 : 0;

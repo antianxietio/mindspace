@@ -9,11 +9,18 @@ import { spacing, theme } from '../../constants/theme';
 
 const DepartmentAnalyticsScreen = () => {
   const dispatch = useDispatch();
-  const { sessions = [] } = useSelector((state) => state.sessions || {});
+  const sessions = useSelector((state) => state.sessions?.sessions || []);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    dispatch(fetchSessions());
+    const loadSessions = async () => {
+      try {
+        await dispatch(fetchSessions());
+      } catch (error) {
+        console.log('Error loading sessions:', error);
+      }
+    };
+    loadSessions();
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
@@ -22,8 +29,8 @@ const DepartmentAnalyticsScreen = () => {
   }, [dispatch]);
 
   // Group sessions by department
-  const departmentData = (sessions || []).reduce((acc, session) => {
-    const dept = session.student?.department || 'Unknown';
+  const departmentData = (Array.isArray(sessions) ? sessions : []).reduce((acc, session) => {
+    const dept = session?.student?.department || 'Unknown';
     if (!acc[dept]) {
       acc[dept] = { total: 0, high: 0, moderate: 0, low: 0 };
     }

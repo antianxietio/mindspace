@@ -1,18 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
-const TimeSlot = require('../models/TimeSlot');
-const Appointment = require('../models/Appointment');
+const supabase = require('../config/supabase');
 
 // @route   GET /api/appointments/slots/:counsellorId
 // @desc    Get time slots for a counsellor
 // @access  Public
 router.get('/slots/:counsellorId', async (req, res) => {
   try {
-    const slots = await TimeSlot.find({
-      counsellor: req.params.counsellorId,
-      isAvailable: true
-    }).sort('dayOfWeek startTime');
+    const { data: slots, error } = await supabase
+      .from('time_slots')
+      .select('*')
+      .eq('counsellor_id', req.params.counsellorId)
+      .eq('is_available', true)
+      .order('day_of_week')
+      .order('start_time');
+
+    if (error) throw error;
 
     res.json({
       success: true,
@@ -20,6 +24,7 @@ router.get('/slots/:counsellorId', async (req, res) => {
       data: slots
     });
   } catch (error) {
+    console.error('Error fetching slots:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -31,21 +36,31 @@ router.post('/slots', protect, authorize('counsellor'), async (req, res) => {
   try {
     const { dayOfWeek, startTime, endTime } = req.body;
 
-    const slot = await TimeSlot.create({
-      counsellor: req.user._id,
-      dayOfWeek,
-      startTime,
-      endTime
-    });
+    const { data: slot, error } = await supabase
+      .from('time_slots')
+      .insert([{
+        counsellor_id: req.user.id,
+        day_of_week: dayOfWeek,
+        start_time: startTime,
+        end_time: endTime,
+        is_available: true
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(400).json({ message: 'Time slot already exists' });
+      }
+      throw error;
+    }
 
     res.status(201).json({
       success: true,
       data: slot
     });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'Time slot already exists' });
-    }
+    console.error('Error creating slot:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -55,19 +70,25 @@ router.post('/slots', protect, authorize('counsellor'), async (req, res) => {
 // @access  Private
 router.get('/my', protect, async (req, res) => {
   try {
-    let appointments;
+    let query = supabase
+      .from('appointments')
+      .select(`
+        *,
+        counsellor:users!appointments_counsellor_id_fkey(id, name, specialization),
+        student:users!appointments_student_id_fkey(id, anonymous_username),
+        time_slot:time_slots(*)
+      `)
+      .order('appointment_date', { ascending: false });
 
     if (req.user.role === 'student') {
-      appointments = await Appointment.find({ student: req.user._id })
-        .populate('counsellor', 'name specialization')
-        .populate('timeSlot')
-        .sort('-appointmentDate');
+      query = query.eq('student_id', req.user.id);
     } else if (req.user.role === 'counsellor') {
-      appointments = await Appointment.find({ counsellor: req.user._id })
-        .populate('student', 'anonymousUsername')
-        .populate('timeSlot')
-        .sort('-appointmentDate');
+      query = query.eq('counsellor_id', req.user.id);
     }
+
+    const { data: appointments, error } = await query;
+
+    if (error) throw error;
 
     res.json({
       success: true,
@@ -75,6 +96,7 @@ router.get('/my', protect, async (req, res) => {
       data: appointments
     });
   } catch (error) {
+    console.error('Error fetching appointments:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -87,31 +109,38 @@ router.post('/', protect, authorize('student'), async (req, res) => {
     const { counsellorId, timeSlotId, appointmentDate } = req.body;
 
     // Check for existing appointment
-    const existing = await Appointment.findOne({
-      student: req.user._id,
-      status: 'scheduled',
-      appointmentDate: { $gte: new Date() }
-    });
+    const { data: existing } = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('student_id', req.user.id)
+      .eq('status', 'scheduled')
+      .gte('appointment_date', new Date().toISOString())
+      .limit(1);
 
-    if (existing) {
+    if (existing && existing.length > 0) {
       return res.status(400).json({ message: 'You already have a scheduled appointment' });
     }
 
-    const appointment = await Appointment.create({
-      student: req.user._id,
-      counsellor: counsellorId,
-      timeSlot: timeSlotId,
-      appointmentDate,
-      status: 'scheduled'
-    });
+    const { data: appointment, error } = await supabase
+      .from('appointments')
+      .insert([{
+        student_id: req.user.id,
+        counsellor_id: counsellorId,
+        time_slot_id: timeSlotId,
+        appointment_date: appointmentDate,
+        status: 'scheduled'
+      }])
+      .select()
+      .single();
 
-    // TODO: Send email notifications
+    if (error) throw error;
 
     res.status(201).json({
       success: true,
       data: appointment
     });
   } catch (error) {
+    console.error('Error booking appointment:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -121,30 +150,41 @@ router.post('/', protect, authorize('student'), async (req, res) => {
 // @access  Private
 router.put('/:id/cancel', protect, async (req, res) => {
   try {
-    const appointment = await Appointment.findById(req.params.id);
+    // Get appointment first
+    const { data: appointment, error: fetchError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
 
-    if (!appointment) {
+    if (fetchError || !appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
 
     // Check authorization
     if (
       req.user.role === 'student' &&
-      appointment.student.toString() !== req.user._id.toString()
+      appointment.student_id !== req.user.id
     ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    appointment.status = 'cancelled';
-    await appointment.save();
+    // Update status
+    const { data: updated, error } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelled' })
+      .eq('id', req.params.id)
+      .select()
+      .single();
 
-    // TODO: Send email notifications
+    if (error) throw error;
 
     res.json({
       success: true,
-      data: appointment
+      data: updated
     });
   } catch (error) {
+    console.error('Error cancelling appointment:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

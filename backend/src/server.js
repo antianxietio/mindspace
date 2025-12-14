@@ -45,16 +45,30 @@ if (process.env.NODE_ENV === 'development') {
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-// app.use('/api/appointments', require('./routes/appointmentRoutes'));
-// app.use('/api/sessions', require('./routes/sessionRoutes'));
-// app.use('/api/journals', require('./routes/journalRoutes'));
-// app.use('/api/moods', require('./routes/moodRoutes'));
-// app.use('/api/analytics', require('./routes/analyticsRoutes'));
-// app.use('/api/counsellors', require('./routes/counsellorRoutes'));
+app.use('/api/appointments', require('./routes/appointmentRoutes'));
+app.use('/api/sessions', require('./routes/sessionRoutes'));
+app.use('/api/journals', require('./routes/journalRoutes'));
+app.use('/api/moods', require('./routes/moodRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/counsellors', require('./routes/counsellorRoutes'));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    routes: {
+      active: [
+        '/api/auth',
+        '/api/appointments',
+        '/api/sessions',
+        '/api/journals',
+        '/api/moods',
+        '/api/analytics',
+        '/api/counsellors'
+      ]
+    }
+  });
 });
 
 // Error handling middleware

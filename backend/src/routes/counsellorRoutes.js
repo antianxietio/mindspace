@@ -1,15 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 
 // @route   GET /api/counsellors
 // @desc    Get all counsellors
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const counsellors = await User.find({ role: 'counsellor' })
-      .select('name specialization isActive')
-      .sort('name');
+    const { data: counsellors, error } = await supabase
+      .from('users')
+      .select('id, name, specialization, is_active')
+      .eq('role', 'counsellor')
+      .order('name');
+
+    if (error) throw error;
 
     res.json({
       success: true,
@@ -27,12 +31,14 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const counsellor = await User.findOne({
-      _id: req.params.id,
-      role: 'counsellor'
-    }).select('name specialization isActive');
+    const { data: counsellor, error } = await supabase
+      .from('users')
+      .select('id, name, specialization, is_active')
+      .eq('id', req.params.id)
+      .eq('role', 'counsellor')
+      .single();
 
-    if (!counsellor) {
+    if (error || !counsellor) {
       return res.status(404).json({ message: 'Counsellor not found' });
     }
 
@@ -41,6 +47,7 @@ router.get('/:id', async (req, res) => {
       data: counsellor
     });
   } catch (error) {
+    console.error('Error fetching counsellor:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

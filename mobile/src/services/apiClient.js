@@ -2,7 +2,7 @@ import axios from 'axios';
 import { storageService } from './storageService';
 import Constants from 'expo-constants';
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'https://cfb884d6ed8b.ngrok-free.app/api';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'https://15253d8998ff.ngrok-free.app/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,

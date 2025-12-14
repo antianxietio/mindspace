@@ -1,89 +1,80 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
-const Session = require('../models/Session');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 
 // @route   GET /api/analytics/department
-// @desc    Get department-wise analytics
+// @desc    Get session distribution by department
 // @access  Private (Management)
 router.get('/department', protect, authorize('management'), async (req, res) => {
   try {
-    const analytics = await Session.aggregate([
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'student',
-          foreignField: '_id',
-          as: 'studentInfo'
-        }
-      },
-      { $unwind: '$studentInfo' },
-      {
-        $group: {
-          _id: '$studentInfo.department',
-          totalSessions: { $sum: 1 },
-          redSeverity: {
-            $sum: { $cond: [{ $eq: ['$severity', 'red'] }, 1, 0] }
-          },
-          yellowSeverity: {
-            $sum: { $cond: [{ $eq: ['$severity', 'yellow'] }, 1, 0] }
-          },
-          greenSeverity: {
-            $sum: { $cond: [{ $eq: ['$severity', 'green'] }, 1, 0] }
-          }
-        }
-      },
-      { $sort: { totalSessions: -1 } }
-    ]);
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select(`
+        id,
+        severity,
+        student:users!sessions_student_id_fkey(department)
+      `);
+
+    if (error) throw error;
+
+    // Group by department
+    const departmentStats = {};
+    sessions.forEach(session => {
+      const dept = session.student?.department || 'Unknown';
+      if (!departmentStats[dept]) {
+        departmentStats[dept] = { total: 0, high: 0, moderate: 0, low: 0 };
+      }
+      departmentStats[dept].total++;
+      if (session.severity) {
+        departmentStats[dept][session.severity] = (departmentStats[dept][session.severity] || 0) + 1;
+      }
+    });
 
     res.json({
       success: true,
-      data: analytics
+      data: departmentStats
     });
   } catch (error) {
+    console.error('Error fetching department analytics:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // @route   GET /api/analytics/year
-// @desc    Get year-wise analytics
+// @desc    Get session distribution by academic year
 // @access  Private (Management)
 router.get('/year', protect, authorize('management'), async (req, res) => {
   try {
-    const analytics = await Session.aggregate([
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'student',
-          foreignField: '_id',
-          as: 'studentInfo'
-        }
-      },
-      { $unwind: '$studentInfo' },
-      {
-        $group: {
-          _id: '$studentInfo.year',
-          totalSessions: { $sum: 1 },
-          redSeverity: {
-            $sum: { $cond: [{ $eq: ['$severity', 'red'] }, 1, 0] }
-          },
-          yellowSeverity: {
-            $sum: { $cond: [{ $eq: ['$severity', 'yellow'] }, 1, 0] }
-          },
-          greenSeverity: {
-            $sum: { $cond: [{ $eq: ['$severity', 'green'] }, 1, 0] }
-          }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select(`
+        id,
+        severity,
+        student:users!sessions_student_id_fkey(year)
+      `);
+
+    if (error) throw error;
+
+    // Group by year
+    const yearStats = {};
+    sessions.forEach(session => {
+      const year = session.student?.year || 'Unknown';
+      if (!yearStats[year]) {
+        yearStats[year] = { total: 0, high: 0, moderate: 0, low: 0 };
+      }
+      yearStats[year].total++;
+      if (session.severity) {
+        yearStats[year][session.severity] = (yearStats[year][session.severity] || 0) + 1;
+      }
+    });
 
     res.json({
       success: true,
-      data: analytics
+      data: yearStats
     });
   } catch (error) {
+    console.error('Error fetching year analytics:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -93,71 +84,54 @@ router.get('/year', protect, authorize('management'), async (req, res) => {
 // @access  Private (Management)
 router.get('/severity', protect, authorize('management'), async (req, res) => {
   try {
-    const analytics = await Session.aggregate([
-      {
-        $group: {
-          _id: '$severity',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select('severity');
 
-    const result = {
-      red: 0,
-      yellow: 0,
-      green: 0
+    if (error) throw error;
+
+    const severityStats = {
+      total: sessions.length,
+      high: sessions.filter(s => s.severity === 'high').length,
+      moderate: sessions.filter(s => s.severity === 'moderate').length,
+      low: sessions.filter(s => s.severity === 'low').length
     };
-
-    analytics.forEach(item => {
-      if (item._id) {
-        result[item._id] = item.count;
-      }
-    });
 
     res.json({
       success: true,
-      data: result
+      data: severityStats
     });
   } catch (error) {
+    console.error('Error fetching severity analytics:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // @route   GET /api/analytics/volume
-// @desc    Get session volume
+// @desc    Get session volume over time
 // @access  Private (Management)
 router.get('/volume', protect, authorize('management'), async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
-    
-    let groupBy;
-    if (period === 'month') {
-      groupBy = {
-        year: { $year: '$createdAt' },
-        month: { $month: '$createdAt' }
-      };
-    } else {
-      groupBy = {
-        year: { $year: '$createdAt' }
-      };
-    }
+    const { data: sessions, error } = await supabase
+      .from('sessions')
+      .select('created_at')
+      .order('created_at', { ascending: true });
 
-    const analytics = await Session.aggregate([
-      {
-        $group: {
-          _id: groupBy,
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id.year': -1, '_id.month': -1 } },
-      { $limit: 12 }
-    ]);
+    if (error) throw error;
+
+    // Group by month
+    const volumeStats = {};
+    sessions.forEach(session => {
+      const month = new Date(session.created_at).toISOString().slice(0, 7); // YYYY-MM
+      volumeStats[month] = (volumeStats[month] || 0) + 1;
+    });
 
     res.json({
       success: true,
-      data: analytics
+      data: volumeStats
     });
   } catch (error) {
+    console.error('Error fetching volume analytics:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -167,14 +141,25 @@ router.get('/volume', protect, authorize('management'), async (req, res) => {
 // @access  Private (Management)
 router.get('/overview', protect, authorize('management'), async (req, res) => {
   try {
-    const totalSessions = await Session.countDocuments();
-    const totalStudents = await User.countDocuments({ role: 'student', isOnboarded: true });
-    const totalCounsellors = await User.countDocuments({ role: 'counsellor' });
-    
-    const activeCounsellors = await User.countDocuments({
-      role: 'counsellor',
-      isActive: true
-    });
+    const { count: totalSessions } = await supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: totalStudents } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'student');
+
+    const { count: totalCounsellors } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'counsellor');
+
+    const { count: activeCounsellors } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'counsellor')
+      .eq('is_active', true);
 
     res.json({
       success: true,
@@ -186,6 +171,7 @@ router.get('/overview', protect, authorize('management'), async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching overview:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
