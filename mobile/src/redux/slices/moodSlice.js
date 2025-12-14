@@ -12,7 +12,8 @@ export const fetchMoods = createAsyncThunk(
   'moods/fetch',
   async (_, { rejectWithValue }) => {
     try {
-      return await moodService.getMoods();
+      const response = await moodService.getMoods();
+      return response.moods || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch moods');
     }
@@ -23,7 +24,8 @@ export const logMood = createAsyncThunk(
   'moods/log',
   async (moodData, { rejectWithValue }) => {
     try {
-      return await moodService.logMood(moodData);
+      const response = await moodService.logMood(moodData);
+      return response.mood || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to log mood');
     }
@@ -34,7 +36,8 @@ export const fetchMonthMoods = createAsyncThunk(
   'moods/fetchMonth',
   async ({ year, month }, { rejectWithValue }) => {
     try {
-      return await moodService.getMonthMoods(year, month);
+      const response = await moodService.getMonthMoods(year, month);
+      return response.moods || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch month moods');
     }

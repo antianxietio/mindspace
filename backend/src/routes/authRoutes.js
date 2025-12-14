@@ -1,64 +1,47 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
-const User = require('../models/User');
+// const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 
 // Generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'temp-secret-key', {
+    expiresIn: '7d'
   });
 };
 
+// TEMPORARY MOCK DATA - Will be replaced with Supabase
+const mockUsers = {};
+
 // @route   POST /api/auth/register
-// @desc    Register user
+// @desc    Register user (MOCK - temporary)
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role, name, specialization } = req.body;
+    const { email, password, role } = req.body;
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // Create user
-    const userData = {
+    // Mock: Just accept any registration
+    const userId = uuidv4();
+    const user = {
+      _id: userId,
+      id: userId,
       email,
-      password,
-      role: role || 'student'
+      role: role || 'student',
+      isOnboarded: false,
+      name: email.split('@')[0]
     };
 
-    // Add role-specific fields
-    if (role !== 'student') {
-      userData.name = name;
-      userData.isOnboarded = true;
-    }
+    mockUsers[email] = { ...user, password };
 
-    if (role === 'counsellor') {
-      userData.specialization = specialization;
-    }
-
-    const user = await User.create(userData);
-
-    // Generate token
     const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
       token,
-      user: {
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-        isOnboarded: user.isOnboarded,
-        name: user.name,
-        specialization: user.specialization
-      }
+      user
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -67,30 +50,28 @@ router.post('/register', async (req, res) => {
 });
 
 // @route   POST /api/auth/login
-// @desc    Login user
+// @desc    Login user (MOCK - temporary)
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    // Check user
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    // Mock: Accept any login
+    const user = mockUsers[email] || {
+      _id: uuidv4(),
+      id: uuidv4(),
+      email,
+      role: 'student',
+      isOnboarded: false,
+      name: email.split('@')[0]
+    };
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    mockUsers[email] = { ...user, password };
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.json({
@@ -134,7 +115,7 @@ router.post('/onboarding', protect, async (req, res) => {
 
     // Generate QR code secret
     const qrSecret = uuidv4();
-    
+
     // Generate QR code
     const qrData = JSON.stringify({
       studentId: req.user._id,
@@ -150,7 +131,7 @@ router.post('/onboarding', protect, async (req, res) => {
     req.user.qrSecret = qrSecret;
     req.user.qrCode = qrCode;
     req.user.isOnboarded = true;
-    
+
     await req.user.save();
 
     res.json({

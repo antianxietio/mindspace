@@ -15,11 +15,33 @@ const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <Text>Username: {user?.anonymousUsername}</Text>
-      <Text>Year: {user?.year}</Text>
-      <Text>Department: {user?.department}</Text>
-      <Button mode="contained" onPress={handleLogout} style={styles.button}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.email}>{user?.email}</Text>
+      </View>
+      <View style={styles.infoCard}>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Username:</Text>
+          <Text style={styles.value}>{user?.name || user?.email?.split('@')[0]}</Text>
+        </View>
+        {user?.year && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Year:</Text>
+            <Text style={styles.value}>{user.year}</Text>
+          </View>
+        )}
+        {user?.department && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Department:</Text>
+            <Text style={styles.value}>{user.department}</Text>
+          </View>
+        )}
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Role:</Text>
+          <Text style={styles.value} style={{ textTransform: 'capitalize' }}>{user?.role}</Text>
+        </View>
+      </View>
+      <Button mode="contained" onPress={handleLogout} style={styles.button} buttonColor={theme.colors.error}>
         Logout
       </Button>
     </View>
@@ -32,10 +54,41 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     padding: spacing.md,
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    marginTop: spacing.lg,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xs,
+  },
+  email: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+  },
+  infoCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: spacing.lg,
+    elevation: 2,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  label: {
+    fontSize: 16,
+    color: theme.colors.placeholder,
+  },
+  value: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
   },
   button: {
     marginTop: spacing.xl,

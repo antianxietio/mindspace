@@ -2,33 +2,102 @@ import apiClient from './apiClient';
 
 class SessionService {
   async getSessions() {
-    const response = await apiClient.get('/sessions');
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      sessions: [
+        {
+          _id: '1',
+          student: { name: 'John Doe', studentId: 'STU001' },
+          counsellor: { name: 'Dr. Sarah Johnson' },
+          date: '2025-12-10',
+          duration: 45,
+          notes: 'Discussed stress management techniques',
+          severity: 'moderate'
+        },
+        {
+          _id: '2',
+          student: { name: 'Jane Smith', studentId: 'STU002' },
+          counsellor: { name: 'Dr. Sarah Johnson' },
+          date: '2025-12-08',
+          duration: 60,
+          notes: 'Career guidance session',
+          severity: 'low'
+        },
+      ]
+    };
   }
 
   async getSessionById(id) {
-    const response = await apiClient.get(`/sessions/${id}`);
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      session: {
+        _id: id,
+        student: { name: 'John Doe', studentId: 'STU001', department: 'Computer Science', year: 2 },
+        counsellor: { name: 'Dr. Sarah Johnson' },
+        date: '2025-12-10',
+        duration: 45,
+        notes: 'Discussed stress management techniques',
+        severity: 'moderate',
+        followUpRequired: true
+      }
+    };
   }
 
   async startSession(qrData) {
-    const response = await apiClient.post('/sessions/start', { qrData });
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      session: {
+        _id: 'session-' + Date.now(),
+        student: { name: 'John Doe', studentId: qrData, department: 'Computer Science', year: 2 },
+        startTime: new Date().toISOString(),
+      }
+    };
   }
 
   async endSession(sessionId, sessionData) {
-    const response = await apiClient.post(`/sessions/${sessionId}/end`, sessionData);
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      session: {
+        _id: sessionId,
+        ...sessionData,
+        endTime: new Date().toISOString(),
+      }
+    };
   }
 
   async getStudentHistory(studentId) {
-    const response = await apiClient.get(`/sessions/student/${studentId}`);
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      sessions: [
+        {
+          _id: '1',
+          date: '2025-12-10',
+          duration: 45,
+          notes: 'Stress management discussion',
+          severity: 'moderate'
+        },
+        {
+          _id: '2',
+          date: '2025-11-25',
+          duration: 60,
+          notes: 'Initial consultation',
+          severity: 'high'
+        },
+      ]
+    };
   }
 
   async submitFeedback(sessionId, feedback) {
-    const response = await apiClient.post(`/sessions/${sessionId}/feedback`, feedback);
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      message: 'Feedback submitted successfully'
+    };
   }
 }
 

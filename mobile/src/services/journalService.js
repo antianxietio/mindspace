@@ -3,42 +3,53 @@ import { storageService } from './storageService';
 
 class JournalService {
   async getJournals() {
-    try {
-      const response = await apiClient.get('/journals');
-      return response.data;
-    } catch (error) {
-      // If offline, return offline journals
-      return await storageService.getOfflineJournals();
-    }
+    // MOCK DATA
+    return {
+      success: true,
+      journals: [
+        {
+          _id: '1',
+          title: 'First Week of Classes',
+          content: 'Today was overwhelming but exciting. Met many new people and adjusting to the schedule.',
+          mood: 'anxious',
+          date: '2025-12-10',
+          tags: ['academic', 'social']
+        },
+        {
+          _id: '2',
+          title: 'Study Group Success',
+          content: 'Had a productive study session with my group. Feeling more confident about the upcoming exam.',
+          mood: 'happy',
+          date: '2025-12-12',
+          tags: ['academic', 'achievement']
+        },
+      ]
+    };
   }
 
   async createJournal(journalData) {
-    try {
-      const response = await apiClient.post('/journals', journalData);
-      return response.data;
-    } catch (error) {
-      // Save offline if request fails
-      const offlineJournals = await storageService.getOfflineJournals();
-      const newJournal = {
+    // MOCK DATA
+    return {
+      success: true,
+      journal: {
+        _id: 'journal-' + Date.now(),
         ...journalData,
-        tempId: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        isOffline: true,
-      };
-      offlineJournals.push(newJournal);
-      await storageService.saveOfflineJournals(offlineJournals);
-      return newJournal;
-    }
+        date: new Date().toISOString(),
+      }
+    };
   }
 
   async updateJournal(id, journalData) {
-    const response = await apiClient.put(`/journals/${id}`, journalData);
-    return response.data;
+    // MOCK DATA
+    return {
+      success: true,
+      journal: { _id: id, ...journalData }
+    };
   }
 
   async deleteJournal(id) {
-    const response = await apiClient.delete(`/journals/${id}`);
-    return response.data;
+    // MOCK DATA
+    return { success: true, message: 'Journal deleted' };
   }
 
   async syncOfflineJournals() {
