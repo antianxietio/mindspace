@@ -13,7 +13,8 @@ export const fetchJournals = createAsyncThunk(
   'journals/fetch',
   async (_, { rejectWithValue }) => {
     try {
-      return await journalService.getJournals();
+      const response = await journalService.getJournals();
+      return response.journals || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch journals');
     }
@@ -24,7 +25,8 @@ export const createJournal = createAsyncThunk(
   'journals/create',
   async (journalData, { rejectWithValue }) => {
     try {
-      return await journalService.createJournal(journalData);
+      const response = await journalService.createJournal(journalData);
+      return response.journal || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create journal');
     }
@@ -35,7 +37,8 @@ export const updateJournal = createAsyncThunk(
   'journals/update',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      return await journalService.updateJournal(id, data);
+      const response = await journalService.updateJournal(id, data);
+      return response.journal || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update journal');
     }
@@ -60,12 +63,12 @@ export const syncOfflineJournals = createAsyncThunk(
     try {
       const { syncQueue } = getState().journals;
       const synced = [];
-      
+
       for (const journal of syncQueue) {
         const result = await journalService.createJournal(journal);
         synced.push(result);
       }
-      
+
       return synced;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Sync failed');

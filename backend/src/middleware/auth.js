@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 
 exports.protect = async (req, res, next) => {
   try {
@@ -15,8 +15,19 @@ exports.protect = async (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
-      
+
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', decoded.id)
+        .single();
+
+      if (error || !user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+
+      req.user = user;
+
       if (!req.user) {
         return res.status(401).json({ message: 'User not found' });
       }

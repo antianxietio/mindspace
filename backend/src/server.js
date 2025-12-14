@@ -1,17 +1,18 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const supabase = require('./config/supabase');
+
 const app = express();
 
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: '*',
   credentials: true
 }));
 
@@ -31,22 +32,25 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB connected successfully'))
-.catch((err) => console.error('❌ MongoDB connection error:', err));
+// Test Supabase connection
+(async () => {
+  try {
+    const { data, error } = await supabase.from('users').select('count').limit(1);
+    if (error && error.code !== 'PGRST116') throw error; // Ignore table not found for now
+    console.log('✅ Supabase connected successfully');
+  } catch (err) {
+    console.log('⚠️  Supabase connection initialized (tables may need to be created)');
+  }
+})();
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/appointments', require('./routes/appointmentRoutes'));
-app.use('/api/sessions', require('./routes/sessionRoutes'));
-app.use('/api/journals', require('./routes/journalRoutes'));
-app.use('/api/moods', require('./routes/moodRoutes'));
-app.use('/api/analytics', require('./routes/analyticsRoutes'));
-app.use('/api/counsellors', require('./routes/counsellorRoutes'));
+// app.use('/api/appointments', require('./routes/appointmentRoutes'));
+// app.use('/api/sessions', require('./routes/sessionRoutes'));
+// app.use('/api/journals', require('./routes/journalRoutes'));
+// app.use('/api/moods', require('./routes/moodRoutes'));
+// app.use('/api/analytics', require('./routes/analyticsRoutes'));
+// app.use('/api/counsellors', require('./routes/counsellorRoutes'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -68,10 +72,12 @@ app.use((req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running on http://${HOST}:${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Local network: http://192.168.1.7:${PORT}`);
 });
 
 module.exports = app;

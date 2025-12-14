@@ -15,7 +15,8 @@ export const fetchCounsellors = createAsyncThunk(
   'appointments/fetchCounsellors',
   async (_, { rejectWithValue }) => {
     try {
-      return await appointmentService.getCounsellors();
+      const response = await appointmentService.getCounsellors();
+      return response.counsellors || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch counsellors');
     }
@@ -26,7 +27,8 @@ export const fetchTimeSlots = createAsyncThunk(
   'appointments/fetchTimeSlots',
   async (counsellorId, { rejectWithValue }) => {
     try {
-      return await appointmentService.getTimeSlots(counsellorId);
+      const response = await appointmentService.getTimeSlots(counsellorId);
+      return response.slots || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch time slots');
     }
@@ -37,7 +39,8 @@ export const bookAppointment = createAsyncThunk(
   'appointments/book',
   async (appointmentData, { rejectWithValue }) => {
     try {
-      return await appointmentService.bookAppointment(appointmentData);
+      const response = await appointmentService.bookAppointment(appointmentData);
+      return response.appointment || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to book appointment');
     }
@@ -48,7 +51,8 @@ export const fetchMyAppointments = createAsyncThunk(
   'appointments/fetchMy',
   async (_, { rejectWithValue }) => {
     try {
-      return await appointmentService.getMyAppointments();
+      const response = await appointmentService.getMyAppointments();
+      return response.appointments || response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch appointments');
     }

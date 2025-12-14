@@ -2,33 +2,75 @@ import apiClient from './apiClient';
 
 class AuthService {
   async login(credentials) {
-    const response = await apiClient.post('/auth/login', credentials);
-    return response.data;
+    // MOCK DATA - Frontend testing only
+    return {
+      success: true,
+      token: 'mock-jwt-token-' + Date.now(),
+      user: {
+        _id: 'user-' + Date.now(),
+        email: credentials.email,
+        role: credentials.email.includes('counsellor') ? 'counsellor' :
+          credentials.email.includes('management') ? 'management' : 'student',
+        isOnboarded: true,
+        name: credentials.email.split('@')[0],
+      }
+    };
   }
 
   async register(userData) {
-    const response = await apiClient.post('/auth/register', userData);
-    return response.data;
+    // MOCK DATA - Frontend testing only
+    return {
+      success: true,
+      token: 'mock-jwt-token-' + Date.now(),
+      user: {
+        _id: 'user-' + Date.now(),
+        email: userData.email,
+        role: 'student',
+        isOnboarded: false,
+        name: userData.name || userData.email.split('@')[0],
+      }
+    };
   }
 
   async completeOnboarding(onboardingData) {
-    const response = await apiClient.post('/auth/onboarding', onboardingData);
-    return response.data;
+    // MOCK DATA - Frontend testing only
+    return {
+      success: true,
+      user: {
+        ...onboardingData,
+        isOnboarded: true,
+      }
+    };
   }
 
   async getCurrentUser() {
-    const response = await apiClient.get('/auth/me');
-    return response.data;
+    // MOCK DATA - Frontend testing only
+    return {
+      success: true,
+      user: {
+        _id: 'mock-user-id',
+        email: 'test@example.com',
+        role: 'student',
+        isOnboarded: true,
+        name: 'Test User',
+      }
+    };
   }
 
   async updateProfile(profileData) {
-    const response = await apiClient.put('/auth/profile', profileData);
-    return response.data;
+    // MOCK DATA - Frontend testing only
+    return {
+      success: true,
+      user: profileData
+    };
   }
 
   async getQRCode() {
-    const response = await apiClient.get('/auth/qr-code');
-    return response.data;
+    // MOCK DATA - Frontend testing only
+    return {
+      success: true,
+      qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    };
   }
 }
 

@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+// import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'auth_token';
@@ -6,10 +6,10 @@ const USER_KEY = 'user_data';
 const JOURNALS_KEY = 'offline_journals';
 
 class StorageService {
-  // Secure storage for sensitive data (tokens)
+  // Using AsyncStorage instead of SecureStore to avoid FLAG_SECURE screen capture blocking
   async setToken(token) {
     try {
-      await SecureStore.setItemAsync(TOKEN_KEY, token);
+      await AsyncStorage.setItem(TOKEN_KEY, token);
     } catch (error) {
       console.error('Error storing token:', error);
       throw error;
@@ -18,7 +18,7 @@ class StorageService {
 
   async getToken() {
     try {
-      return await SecureStore.getItemAsync(TOKEN_KEY);
+      return await AsyncStorage.getItem(TOKEN_KEY);
     } catch (error) {
       console.error('Error retrieving token:', error);
       return null;
@@ -27,7 +27,7 @@ class StorageService {
 
   async removeToken() {
     try {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await AsyncStorage.removeItem(TOKEN_KEY);
     } catch (error) {
       console.error('Error removing token:', error);
     }
